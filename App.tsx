@@ -1,20 +1,128 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import * as ScreenOrientation from "expo-screen-orientation";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect } from "react";
+import {
+  Easing,
+  View,
+  Text,
+  Animated,
+  Dimensions,
+  Button,
+  useWindowDimensions,
+  StyleSheet,
+} from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {
+  createModalStack,
+  ModalProvider,
+  ModalStackConfig,
+  useModal,
+} from "react-native-modalfy";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-export default function App() {
+const { height } = Dimensions.get("window");
+
+const modalConfig: ModalStackConfig = {
+  SimpleModal: {
+    modal: SimpleModal,
+    backdropOpacity: 0.4,
+    position: "bottom",
+    animateInConfig: {
+      easing: Easing.inOut(Easing.exp),
+      duration: 300,
+    },
+    animateOutConfig: {
+      easing: Easing.inOut(Easing.exp),
+      duration: 300,
+    },
+    transitionOptions: (animatedValue: Animated.Value) => ({
+      transform: [
+        {
+          translateY: animatedValue.interpolate({
+            inputRange: [0, 1, 2],
+            outputRange: [height, 0, height],
+          }),
+        },
+      ],
+    }),
+  },
+};
+
+const modalStack = createModalStack(modalConfig);
+
+function SimpleModal() {
+  const dimensions = useWindowDimensions();
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
+    <View
+      style={[
+        styles.modalContainer,
+        {
+          width: dimensions.width,
+          height: dimensions.height * 0.7,
+        },
+      ]}
+    >
+      <Text style={styles.text}>Simple Modal</Text>
     </View>
   );
 }
 
+function Screen() {
+  const { openModal } = useModal();
+
+  useEffect(() => {
+    ScreenOrientation.unlockAsync();
+
+    return () => {
+      ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP
+      );
+    };
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.view}>
+      <Button title="Open modal" onPress={() => openModal("SimpleModal")} />
+
+      <View>
+        <Text style={styles.text} onPress={() => console.log("press")}>
+          Press
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+export default function App() {
+  return (
+    <GestureHandlerRootView style={styles.wrapper}>
+      <SafeAreaProvider>
+        <ModalProvider stack={modalStack}>
+          <StatusBar style="dark" />
+          <Screen />
+        </ModalProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+  },
+  view: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  text: {
+    color: "black",
+    fontSize: 34,
+    textAlign: "center",
+  },
+  modalContainer: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    backgroundColor: "lightgray",
   },
 });
