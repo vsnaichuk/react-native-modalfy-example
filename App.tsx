@@ -73,12 +73,6 @@ function Screen() {
 
   useEffect(() => {
     ScreenOrientation.unlockAsync();
-
-    return () => {
-      ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP
-      );
-    };
   }, []);
 
   return (
